@@ -1,0 +1,18 @@
+{
+  "name": "fullstack-scenario",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "npx tsx index",
+    "build": "npx tsc",
+    "start": "node ."
+  },
+  "keywords": [],
+  "author": "SidneyMalapit",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
