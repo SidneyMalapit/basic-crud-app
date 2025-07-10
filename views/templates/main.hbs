@@ -5,5 +5,10 @@
   <title>Home</title>
   <link rel="stylesheet" href="/styles/main.css">
 </head>
-<body>{{{body}}}</body>
+<body>
+  <header class="main-structure">{{> header}}</header>
+  <main class="main-structure">{{{body}}}</main>
+  <!-- FOUC dummy script -->
+  <script>0</script>
+</body>
 </html>

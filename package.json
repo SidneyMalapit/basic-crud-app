@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "test": "npx tsx watch index",
+    "test": "npx tsx watch --include \"**/*.hbs\" index",
     "build": "npx tsc",
     "start": "node ."
   },
