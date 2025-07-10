@@ -1,5 +1,6 @@
 import { default as express, Router } from 'express';
 import { compileView, views } from './render.js';
+import apiRouter from './api.js';
 
 const router = Router();
 
@@ -12,6 +13,8 @@ router.use((req, res, next) => {
   if (!views.includes(name)) { return next(); }
   res.send(compileView(name));
 });
+
+router.use('/api', apiRouter);
 
 router.use((_, res) => {
   res.status(404).send(compileView('.not-found'));
