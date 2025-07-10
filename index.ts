@@ -1,7 +1,10 @@
 import 'dotenv/config';
 import express from 'express';
 import morgan from 'morgan';
-import router from './router';
+import router from './router.js';
+import connection from './database.js';
+
+console.log(await connection.execute('SELECT * FROM users'));
 
 const app = express();
 

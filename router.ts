@@ -1,5 +1,5 @@
 import { default as express, Router } from 'express';
-import { compileView, views } from './render';
+import { compileView, views } from './render.js';
 
 const router = Router();
 
