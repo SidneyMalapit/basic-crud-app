@@ -1,6 +1,52 @@
-<template id="table">
-  <table>
-    <thead></thead>
-    <tbody></tbody>
-  </table>
+<article id="tables-container" class="invisible">
+  <div>
+    <table id="user" class="data">
+      <thead>
+        <tr>
+          {{#each fields.user}}
+          <th data-name="{{this}}">{{this}}</th>
+          {{/each}}
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button class="add-row"><img src="/assets/plus.svg" alt="Add row"></button>
+  </div>
+
+  <div>
+    <table id="publication" class="data">
+      <thead>
+        <tr>
+          {{#each fields.publication}}
+          <th data-name="{{this}}">{{this}}</th>
+          {{/each}}
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button class="add-row"><img src="/assets/plus.svg" alt="Add row"></button>
+  </div>
+</article>
+<footer id="submit-container">
+  <button class="submit" form="user-table-form">Save changes</button>
+  <button class="submit" form="publication-table-form">Save changes</button>
+</footer>
+
+
+<form
+    id="user-table-form"
+    style="display:none"
+    ></form>
+<form
+    id="publication-table-form"
+    style="display:none"
+    ></form>
+
+<template id="ghost-row-template">
+  <tr class="ghost-row">
+    <td><br></td>
+    <td><input required></td>
+    <td><input required></td>
+    <td><input required></td>
+  </tr>
 </template>

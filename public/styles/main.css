@@ -2,9 +2,10 @@
 
 :root {
   /* palette */
-  --primary: #fff;
-  --background: #fff;
-  --text: #000;
+  --primary: #f00;
+  --background: #111;
+  --background2: #070707;
+  --text: #ddd;
 
   background: var(--background);
   color: var(--text);
@@ -32,4 +33,8 @@ main.main-structure {
 
 p, h1, h2  h3, h4, h5, h6 {
   margin: 0;
+}
+
+.invisible {
+  visibility: hidden;
 }

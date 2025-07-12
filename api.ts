@@ -1,11 +1,10 @@
 import { default as express, Router } from 'express';
-import connection from './database.js';
-import userRouter from './user-api.js';
-import publicationRouter from './publication-api.js';
+import { default as userRouter } from './user-api.js';
+import { default as publicationRouter } from './publication-api.js';
 
 const apiRouter = Router();
 
-apiRouter.use(express.urlencoded());
+apiRouter.use(express.json());
 
 apiRouter.use('/users', userRouter);
 apiRouter.use('/publications', publicationRouter);

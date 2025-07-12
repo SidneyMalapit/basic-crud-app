@@ -49,4 +49,11 @@ export async function isUnique(email: string): Promise<boolean> {
   return !result[0]['COUNT(*)'];
 }
 
+export interface IUser {
+  id?: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+}
+
 export default userSchema;

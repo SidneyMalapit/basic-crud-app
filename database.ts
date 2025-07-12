@@ -8,3 +8,5 @@ const connection = await mysql.createConnection({
 });
 
 export default connection;
+
+export type MySQLResult = [mysql.ResultSetHeader, mysql.FieldPacket[]];

@@ -6,6 +6,8 @@
   "scripts": {
     "test": "npx tsx watch --include \"**/*.hbs\" index",
     "build": "npx tsc",
+    "test-public": "npx tsc --watch --project public/scripts/tsconfig.json",
+    "build-public": "npx tsc --project public/scripts/tsconfig.json",
     "start": "node ."
   },
   "keywords": [],

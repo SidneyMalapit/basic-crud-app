@@ -1,4 +1,5 @@
 header.main-structure {
+  background: var(--background2);
   display: flex;
   justify-content: center;
 }

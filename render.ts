@@ -14,9 +14,9 @@ for (const partial of partials) {
   Handlebars.registerPartial(partial.slice(0, -4), getPartial(partial));
 }
 
-export function compileView(name: string, template = mainTemplate, ctx = {}) {
+export function compileView(name: string, ctx = {}, template = mainTemplate) {
   return template({
-    body: getView(name),
+    body: Handlebars.compile(getView(name)),
     ...ctx
   });
 }

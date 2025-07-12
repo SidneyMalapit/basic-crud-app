@@ -1,15 +1,47 @@
-import { default as express, Router } from 'express';
-import connection from './database.js';
+import Joi from 'joi';
+import mysql from 'mysql2';
+import { Router, RequestHandler } from 'express';
+import { default as connection, MySQLResult } from './database.js';
 import publicationSchema from './publication-schema.js';
 
-const publicationRouter = Router();
+const router = Router();
 
-publicationRouter.use(express.urlencoded());
-
-const publicationFields = (await connection.query(`SELECT * FROM publications`))[1]
+export const publicationFields = (await connection.query(`SELECT * FROM publications`))[1]
 .map((entry) => entry.name);
 
-publicationRouter.get('/', async (_, res) => {
+const deleteMany: RequestHandler = async (req, res) => {
+  try {
+    Joi.assert(
+      req.body,
+      Joi
+      .array()
+      .items(Joi.number())
+      .required()
+      .min(1)
+      .message('Body must be an array of at least 1 id')
+    );
+  } catch (error) {
+    return res.status(400).json(error);
+  }
+
+  let result;
+
+  try {
+    result = (await connection.query(
+      `
+      DELETE FROM publications
+      WHERE id IN (${req.body.length})
+      `
+    ) as MySQLResult)[0];
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({});
+  }
+
+  res.status(200).json(result);
+}
+
+router.get('/', async (_, res) => {
   try {
     const [result] = await connection.query(`SELECT * FROM publications`);
     res.json({
@@ -22,7 +54,7 @@ publicationRouter.get('/', async (_, res) => {
   }
 });
 
-publicationRouter.post('/', async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     await publicationSchema.validateAsync(req.body);
   } catch (error) {
@@ -40,7 +72,7 @@ publicationRouter.post('/', async (req, res) => {
       VALUES(?, ?, ?)
       `,
       [student_id, title, year]
-    ) as any)[0].insertId;
+    ) as MySQLResult)[0].insertId;
   } catch (error) {
     console.error(error);
     return res.status(500).json({});
@@ -49,7 +81,7 @@ publicationRouter.post('/', async (req, res) => {
   res.status(201).json({ id });
 });
 
-publicationRouter.patch('/:id', async (req, res) => {
+router.patch('/:id', async (req, res) => {
   let result;
 
   try {
@@ -105,7 +137,7 @@ publicationRouter.patch('/:id', async (req, res) => {
   });
 });
 
-publicationRouter.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res) => {
   if (!await doesPublicationExist(parseInt(req.params.id))) {
     return res.status(404).json({});
   }
@@ -126,6 +158,8 @@ publicationRouter.delete('/:id', async (req, res) => {
   res.status(204).json({});
 });
 
+router.delete('/', deleteMany);
+
 async function doesPublicationExist(id: number) {
   const [result] = (await connection.query(
     `
@@ -138,4 +172,4 @@ async function doesPublicationExist(id: number) {
   return !!result[0]['COUNT(*)'];
 }
 
-export default publicationRouter;
+export default router;

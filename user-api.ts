@@ -1,17 +1,15 @@
-import { default as express, Router } from 'express';
+import { Router } from 'express';
 import connection from './database.js';
-import userSchema from './user-schema.js';
+import { default as userSchema, IUser } from './user-schema.js';
 
-const userRouter = Router();
+const router = Router();
 
-userRouter.use(express.urlencoded());
-
-const userFields = (await connection.query(`SELECT * FROM users`))[1]
+export const userFields = (await connection.query(`SELECT * FROM users`))[1]
 .map((entry) => entry.name);
 
-userRouter.get('/', async (_, res) => {
+router.get('/', async (_, res) => {
   try {
-    const [result, fields] = await connection.query(`SELECT * FROM users`);
+    const [result] = await connection.query(`SELECT * FROM users`);
     res.json({
       result,
       fields: userFields
@@ -22,14 +20,14 @@ userRouter.get('/', async (_, res) => {
   }
 });
 
-userRouter.post('/', async (req, res) => {
-  const { email, first_name, last_name } = req.body;
-
+router.post('/', async (req, res) => {
   try {
     await userSchema.validateAsync(req.body);
   } catch (error) {
     return res.status(400).json(error);
   }
+
+  const { email, first_name, last_name } = req.body;
 
   let id;
   try {
@@ -37,7 +35,7 @@ userRouter.post('/', async (req, res) => {
       `
       INSERT INTO users
       (email, first_name, last_name)
-      VALUES(?, ?, ?)
+      VALUES (?, ?, ?)
       `,
       [email, first_name, last_name]
     ) as any)[0].insertId;
@@ -46,11 +44,10 @@ userRouter.post('/', async (req, res) => {
     return res.status(500).json({});
   }
 
-
   res.status(201).json({ id });
 });
 
-userRouter.patch('/:id', async (req, res) => {
+router.patch('/:id', async (req, res) => {
   let result;
 
   try {
@@ -106,7 +103,7 @@ userRouter.patch('/:id', async (req, res) => {
   });
 });
 
-userRouter.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res) => {
   if (!await doesUserExist(parseInt(req.params.id))) {
     return res.status(404).json({});
   }
@@ -139,4 +136,4 @@ async function doesUserExist(id: number) {
   return !!result[0]['COUNT(*)'];
 }
 
-export default userRouter;
+export default router;
