@@ -1,52 +1,39 @@
-<article id="tables-container" class="invisible">
-  <div>
-    <table id="user" class="data">
-      <thead>
-        <tr>
-          {{#each fields.user}}
-          <th data-name="{{this}}">{{this}}</th>
-          {{/each}}
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <button class="add-row"><img src="/assets/plus.svg" alt="Add row"></button>
-  </div>
-
-  <div>
-    <table id="publication" class="data">
-      <thead>
-        <tr>
-          {{#each fields.publication}}
-          <th data-name="{{this}}">{{this}}</th>
-          {{/each}}
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <button class="add-row"><img src="/assets/plus.svg" alt="Add row"></button>
-  </div>
-</article>
-<footer id="submit-container">
-  <button class="submit" form="user-table-form">Save changes</button>
-  <button class="submit" form="publication-table-form">Save changes</button>
-</footer>
-
-
-<form
-    id="user-table-form"
-    style="display:none"
-    ></form>
-<form
-    id="publication-table-form"
-    style="display:none"
-    ></form>
-
-<template id="ghost-row-template">
-  <tr class="ghost-row">
-    <td><br></td>
-    <td><input required></td>
-    <td><input required></td>
-    <td><input required></td>
-  </tr>
-</template>
+<label>
+  Select a table to view:
+  <select id="table-selector">
+    <option hidden disabled selected value>select one</option>
+    <option value="users">users</option>
+    <option value="conferences">conferences</option>
+    <option value="publications">publications</option>
+  </select>
+</label>
+<article id="tables-container" class="invisible"></article>
+<button id="add-row"></button>
+<section id="add-row-modal">
+  <form id="add-row-form">
+    <p>Add a publication</p>
+    <input type="text" name="title" required placeholder="title of publication">
+    <input type="number" name="year" required placeholder="year published">
+    <select id="author-select" name="student_id" required>
+      <option hidden disabled selected value>select an author</option>
+    </select>
+    <select id="conference-select" name="conference_id" required>
+      <option hidden disabled selected value>select a conference</option>
+    </select>
+    <button>Add</button>
+  </form>
+</section>
+<section id="edit-row-modal">
+  <form id="edit-row-form">
+    <p>Edit publication #<output id="publication-id"></output></p>
+    <input type="text" name="title" required placeholder="title of publication">
+    <input type="number" name="year" required placeholder="year published">
+    <select id="author-select" name="student_id" required>
+      <option hidden disabled selected value>select an author</option>
+    </select>
+    <select id="conference-select" name="conference_id" required>
+      <option hidden disabled selected value>select a conference</option>
+    </select>
+    <button>Save edit</button>
+  </form>
+</section>

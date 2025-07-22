@@ -3,3 +3,8 @@ header.main-structure {
   display: flex;
   justify-content: center;
 }
+
+h1 > a {
+  color: var(--text);
+  text-decoration: none;
+}

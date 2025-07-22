@@ -1,189 +1,162 @@
-import { addUser, deleteUser, IUser } from './User.js';
-import { addPublication, deletePublication, IPublication } from './Publication.js';
-
 await new Promise((resolve) => { document.addEventListener('DOMContentLoaded', resolve); });
 
-const tablesContainer = document.getElementById('tables-container') as HTMLElement;
-const userTable = document.getElementById('user') as HTMLTableElement;
-const publicationTable = document.getElementById('publication') as HTMLTableElement;
+const tables = await createTables();
+const tablesContainer = document.getElementById('tables-container')!;
+tablesContainer.classList.remove('invisible');
+tablesContainer.append(...tables);
 
-let userData: any;
-let publicationData: any;
-const userDataMap: Map<HTMLTableRowElement, IUser> = new Map;
-const publicationDataMap: Map<HTMLTableRowElement, IPublication> = new Map;
-const inputTypes: Record<string, string[]> = {
-  user: ['email', 'text', 'text'],
-  publication:['number', 'text', 'number']
-};
-const addFunctions: Record<string, (...T: any[]) => Promise<any>> = {
-  'user': addUser,
-  'publication': addPublication
-};
-const deleteFunctions: Record<string, (...T: any[]) => Promise<any>> = {
-  'user': deleteUser,
-  'publication': deletePublication
-};
+for (const table of tables) {
+  table.tBodies[0].append(await createRows(table.id));
 
-const ghostTemplate = document.getElementById('ghost-row-template') as HTMLTemplateElement;
-
-await loadRows();
-
-const userForm = document.getElementById('user-table-form') as HTMLFormElement;
-
-const publicationForm = document.getElementById('publication-table-form') as HTMLFormElement;
-
-userForm.addEventListener('submit', formSubmitHandler);
-publicationForm.addEventListener('submit', formSubmitHandler);
-
-tablesContainer.addEventListener('click', (event) => {
-  const { target } = event;
-
-  if (!(
-    event instanceof PointerEvent &&
-    target instanceof HTMLElement
-  )) { return; }
-
-  const button = target.closest('button.delete');
-  const row = target.closest('tr');
-  const table = target.closest('table');
-  if (!(row && button && table && row.cells[0].textContent)) { return; }
-  deleteFunctions[table.id](parseInt(row.cells[0].textContent))
-  .finally(() => loadRows());
-});
-
-([...document.getElementsByClassName('add-row')] as HTMLButtonElement[])
-.forEach((button) => {
-  button.addEventListener('click', (event) => {
-    if (
-      !(event instanceof PointerEvent) ||
-      !(event.target instanceof HTMLElement)
-    ){ return; }
-
-    const table = event.target.previousElementSibling as HTMLTableElement;
-    addGhostRow(table.tBodies[0]!);
+  // delete handler
+  table.addEventListener('click', (event) => {
+    if (!(event?.target instanceof HTMLButtonElement)) { return; }
+    if (!event.target.classList.contains('delete')) { return; }
+    const row = event.target.closest('tr');
+    if (!row) { return; }
+    fetch(`/api/${table.id}/${row.cells[1].textContent}`, { method: 'DELETE' }).then(() => location.reload());
   });
-});
 
-function formSubmitHandler(event: Event) {
-  event.preventDefault();
-  const { currentTarget } = event;
-  if (
-    !(event instanceof SubmitEvent) ||
-    !(currentTarget instanceof HTMLFormElement)
-  ) { return; }
-
-  hideSubmit(event.submitter ?? document.body);
-
-  const requests: Promise<any>[] = [];
-  {
-    const temp = [ ...(new FormData(currentTarget)).entries() ];
-    for (let i = 0; i < temp.length; i += 3) {
-      const entry: Record<string, FormDataEntryValue> = {};
-      entry[temp[i][0]] = temp[i][1];
-      entry[temp[i + 1][0]] = temp[i + 1][1];
-      entry[temp[i + 2][0]] = temp[i + 2][1];
-      requests.push(addFunctions[currentTarget.id.replace('-table-form', '')](entry));
-    }
-  }
-  Promise.allSettled(requests).finally(() => loadRows());
+  // edit handler
+  table.addEventListener('click', (event) => {
+    if (!(event?.target instanceof HTMLButtonElement)) { return; }
+    if (!event.target.classList.contains('edit')) { return; }
+    const row = event.target.closest('tr');
+    if (!row) { return; }
+    document.getElementById('publication-id')!.textContent = row.dataset.id ?? null;
+  });
 }
 
-function addGhostRow(...tbodies: HTMLElement[]) {
-  for (const tbody of tbodies) {
-    const table = tbody.closest('table')!;
-    tbody.append(createGhostRow());
-    const row = tbody.lastElementChild!;
-    const { fields } = table.id === 'user'
-      ? userData
-      : publicationData;
-    const inputs = row.getElementsByTagName('input');
-    for (let i = 0; i < 3; i++) {
-      inputs[i].setAttribute('type', inputTypes[table.id][i]);
-      inputs[i].setAttribute('form', `${table.id}-table-form`);
-      inputs[i].setAttribute('name', fields[i + 1]);
-    }
-  }
+const selector = document.getElementById('table-selector') as HTMLSelectElement;
+{
+  let lastSelected: HTMLTableElement | undefined;
+  handler();
+  selector.addEventListener('change', handler);
 
-  for (const lastGhostRow of document.querySelectorAll('.ghost-row:last-child')!) {
-    lastGhostRow.addEventListener('input', lastRowEditedHandler, { once: true });
+  function handler() {
+    const table = document.getElementById(selector.value);
+    if (!(table instanceof HTMLTableElement)) { return; }
+    table.classList.add('selected');
+    lastSelected?.classList.remove('selected');
+    lastSelected = table;
   }
 }
 
-function createGhostRow() {
-  return ghostTemplate.content.cloneNode(true);
+populateAuthors();
+populateConferences();
+
+// add row
+{
+  const form = document.getElementById('add-row-form') as HTMLFormElement;
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    fetch('/api/publications', {
+      method: 'POST',
+      body: JSON.stringify(Object.fromEntries(new FormData(form).entries())),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    }).then(() => location.reload());
+  });
 }
 
-function lastRowEditedHandler(event: Event) {
-  if (!(event instanceof InputEvent)) { return; }
-  const { currentTarget, target } = event;
-  if (
-    !(target instanceof HTMLElement) ||
-    !(currentTarget instanceof HTMLElement)
-  ) { return; }
-
-  const table = currentTarget.closest('table');
-  if (!table) { return; }
-  showSubmit(table);
+// edit row
+{
+  const form = document.getElementById('edit-row-form') as HTMLFormElement;
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    console.log(Object.fromEntries(new FormData(form).entries()));
+    return;
+    fetch('/api/publications', {
+      method: 'PUT',
+      body: JSON.stringify(Object.fromEntries(new FormData(form).entries())),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    }).then(() => location.reload());
+  });
 }
 
-function hideSubmit(button: HTMLElement) {
-  button.classList.remove('visible');
+async function populateAuthors() {
+  const authors = await fetch('/api/users').then((res) => res.json());
+  for (const { id, first_name, last_name } of authors) {
+    const option = document.createElement('option');
+    option.value = id;
+    option.textContent = `${first_name} ${last_name}`;
+    (document.getElementById('author-select') as HTMLSelectElement).add(option);
+  }
 }
 
-function showSubmit(table: HTMLTableElement) {
-  const button = document.querySelector(`.submit[form=${table.id}-table-form]`);
-  if (!button) { return; }
-  button.classList.add('visible');
+async function populateConferences() {
+  const conferenceRows = document.querySelectorAll('#conferences tr');
+  for (const row of conferenceRows) {
+    if (!(row instanceof HTMLElement)) { continue; }
+    const { id, name, category } = row.dataset;
+    const option = document.createElement('option');
+    option.value = id ?? '';
+    option.textContent = `${name} \u2014 ${category}`;
+    option.disabled = !!document.querySelector(`#publications tr[data-conference_name="${name}"][data-conference_category="${category}"]`);
+    (document.getElementById('conference-select') as HTMLSelectElement).add(option);
+  }
 }
 
-function fetchData() {
+async function createTables() {
+  const ids = 'users conferences publications'.split(' ');
   return Promise.all([
-    fetch('/api/users').then((res) => res.json()),
-    fetch('/api/publications').then((res) => res.json())
-  ]);
+    getModelFieldNames('user'),
+    getModelFieldNames('conference'),
+    getModelFieldNames('publication')
+  ]).then((fields) => fields.map((field, i) => createTable(ids[i], field)));
 }
 
-async function loadRows() {
-  userDataMap.clear();
-  publicationDataMap.clear();
-
-  [userData, publicationData] = await fetchData();
-
-  tablesContainer.classList.remove('invisible');
-
-  for (const row of tablesContainer.querySelectorAll('tbody tr')) {
-    row.remove();
+function createTable(id: string, fieldNames: string[]) {
+  const table = document.createElement('table');
+  table.id = id;
+  table.append(document.createElement('thead'), document.createElement('tbody'));
+  
+  for (const name of fieldNames) {
+    const header = document.createElement('th');
+    header.textContent = name;
+    table.tHead?.append(header);
   }
 
-  for (const row of userData.result) {
-    userDataMap.set(addTableRow(row, userTable), row);
-  }
+  const deleteColGhost = document.createElement('th');
+  const editColGhost = document.createElement('th');
+  table.tHead?.prepend(editColGhost);
+  table.tHead?.append(deleteColGhost);
 
-  for (const row of publicationData.result) {
-    publicationDataMap.set(addTableRow(row, publicationTable), row);
-  }
-
-  addGhostRow(...document.getElementsByTagName('tbody'));
+  return table;
 }
 
-function addTableRow(row: Record<string, any>, table: HTMLTableElement) {
-  const rowElement = document.createElement('tr');
-  let isFirstKey = true;
-  for (const key in row) {
-    const cell = document.createElement('td');
-    cell.textContent = row[key];
-    rowElement.append(cell);
+async function createRows(id: string) {
+  const fragment = new DocumentFragment;
+  const data = await fetch(`/api/${id}`).then((res) => res.json());
 
-    if (!isFirstKey) { continue; }
+  for (const row of data) {
+    const tr = document.createElement('tr');
+
+    for (const [key, value] of Object.entries(row)) {
+      tr.insertCell().textContent = value?.toString() ?? null;
+      tr.setAttribute(`data-${key}`, value?.toString() ?? '');
+    }
+
+    const editButton = document.createElement('button');
     const deleteButton = document.createElement('button');
+    editButton.classList.add('edit');
     deleteButton.classList.add('delete');
-    deleteButton.innerHTML = '<img src="/assets/trash.svg" alt="Delete row">';
-    cell.prepend(deleteButton);
-    isFirstKey = false;
+    tr.insertCell().append(editButton);
+    tr.insertCell(0).append(deleteButton);
+
+    fragment.append(tr);
   }
-  const tbody = table.getElementsByTagName('tbody')[0];
-  tbody.append(rowElement);
-  return rowElement;
+
+  return fragment;
+}
+
+function getModelFieldNames(model: string) {
+  return fetch(`/api/${model}s/columns`).then((res) => res.json());
 }
 
 export {};
